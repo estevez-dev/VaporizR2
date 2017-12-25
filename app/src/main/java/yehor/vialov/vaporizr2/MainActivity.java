@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -20,7 +21,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     private final static int REQUEST_ENABLE_BT = 1;
-    Button btnConnect;
+    TextView txtStatus;
     OutputStream btOutStream;
     Boolean btConnected = false;
     BluetoothSocket btSocket = null;
@@ -28,25 +29,33 @@ public class MainActivity extends AppCompatActivity {
     SeekBar motorB;
     TextView txtA;
     TextView txtB;
-    int motorACommand = 2;
-    int motorBCommand = 2;
+    private final static int MOTOR_FULL_FORWARD_COMMAND = 4;
+    private final static int MOTOR_FULL_BACKWARD_COMMAND = 0;
+    private final static int MOTOR_STOP_COMMAND = 2;
+    ImageView imEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnConnect = (Button)findViewById(R.id.btnConnect);
+        txtStatus = (TextView) findViewById(R.id.txtStatus);
 
-        motorA = (SeekBar)findViewById(R.id.motorA);
-        motorA.setProgress(2);
-        motorA.setMax(4);
-        motorB = (SeekBar)findViewById(R.id.motorB);
-        motorB.setProgress(2);
-        motorB.setMax(4);
+        motorA = (SeekBar)findViewById(R.id.motorB);
+        motorA.setProgress(MOTOR_STOP_COMMAND);
+        motorA.setMax(MOTOR_FULL_FORWARD_COMMAND);
+        motorB = (SeekBar)findViewById(R.id.motorA);
+        motorB.setProgress(MOTOR_STOP_COMMAND);
+        motorB.setMax(MOTOR_FULL_FORWARD_COMMAND);
+        motorA.setEnabled(false);
+        motorB.setEnabled(false);
+        imEngine = (ImageView)findViewById(R.id.imCE);
 
+        imEngine.setVisibility(View.VISIBLE);
         txtA = (TextView)findViewById(R.id.txtA);
         txtB = (TextView)findViewById(R.id.txtB);
+        txtA.setText(Integer.toString(MOTOR_STOP_COMMAND));
+        txtB.setText(Integer.toString(MOTOR_STOP_COMMAND));
 
         motorA.setOnSeekBarChangeListener(
                 new SeekBar.OnSeekBarChangeListener() {
@@ -54,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                                                   int progresValue, boolean fromUser) {
-                        motorBCommand = progresValue;
                         sendCommand();
                     }
 
@@ -67,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        seekBar.setProgress(2);
+                        seekBar.setProgress(MOTOR_STOP_COMMAND);
 
                     }
         });
@@ -78,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                                                   int progresValue, boolean fromUser) {
-                        motorACommand = progresValue;
                         sendCommand();
                     }
 
@@ -91,14 +98,51 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        seekBar.setProgress(2);
+                        seekBar.setProgress(MOTOR_STOP_COMMAND);
 
                     }
                 });
 
-        btnConnect.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (!btConnected) {
+        connectToCar();
+
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        disconnectFromCar();
+        super.onDestroy();
+    }
+
+    private void disconnectFromCar() {
+        try {
+            btOutStream.close();
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+        try {
+            btSocket.close();
+        } catch (Exception e) {
+            //e.printStackTrace();
+        }
+        btConnected = false;
+        motorA.setEnabled(false);
+        motorB.setEnabled(false);
+        imEngine.setVisibility(View.GONE);
+    }
+
+    private void connectToCar() {
+        new Thread() {
+            public void run() {
+                while (btSocket==null || !btSocket.isConnected()) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            txtStatus.setText("Connecting...");
+                            imEngine.setVisibility(View.VISIBLE);
+                        }
+                    });
+
                     BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
                     if (adapter == null) {
                         // Device does not support Bluetooth
@@ -106,62 +150,83 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     if (!adapter.isEnabled()) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                txtStatus.setText("Bluetooth is not enabled. Will retry in 5 sec.");
+                                imEngine.setVisibility(View.VISIBLE);
+                            }
+                        });
                         //make sure the device's bluetooth is enabled
                         Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                         startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
+                    } else {
+                        final UUID SERIAL_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //UUID for serial connection
+                        String mac = "98:D3:31:F5:2D:2F"; //my laptop's mac adress
+                        BluetoothDevice device = adapter.getRemoteDevice(mac); //get remote device by mac, we assume these two devices are already paired
+                        // Get a BluetoothSocket to connect with the given BluetoothDevice
+                        btSocket = null;
+                        btOutStream = null;
+                        try {
+                            btSocket = device.createRfcommSocketToServiceRecord(SERIAL_UUID);
+                        } catch (Exception e) {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtStatus.setText("Error creating socket.  Will retry in 5 sec.");
+                                    imEngine.setVisibility(View.VISIBLE);
+                                }
+                            });
+                        }
+
+                        try {
+                            btSocket.connect();
+                            btOutStream = btSocket.getOutputStream();
+
+                            btConnected = true;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtStatus.setText("Connected");
+                                    imEngine.setVisibility(View.GONE);
+                                    motorA.setEnabled(true);
+                                    motorB.setEnabled(true);
+                                }
+                            });
+                        } catch (Exception e) {
+                            final Exception er = e;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    txtStatus.setText("Connection error. Will retry in 5 sec.");
+                                    imEngine.setVisibility(View.VISIBLE);
+                                }
+
+                            });
+                            e.printStackTrace();
+                        }
                     }
-
-                    final UUID SERIAL_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //UUID for serial connection
-                    String mac = "98:D3:31:F5:2D:2F"; //my laptop's mac adress
-                    BluetoothDevice device = adapter.getRemoteDevice(mac); //get remote device by mac, we assume these two devices are already paired
-
-
-                    // Get a BluetoothSocket to connect with the given BluetoothDevice
-                    btSocket = null;
-                    btOutStream = null;
                     try {
-                        btSocket = device.createRfcommSocketToServiceRecord(SERIAL_UUID);
-                    } catch (IOException e) {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-
-                    try {
-                        btSocket.connect();
-                        btOutStream = btSocket.getOutputStream();
-                        btConnected = true;
-                        btnConnect.setText("Disconnect");
-                        //now you can use out to send output via out.write
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    try {
-                        btOutStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        btSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    btConnected = false;
-                    btnConnect.setText("Connect");
                 }
             }
-        });
+        }.start();
     }
 
     private void sendCommand() {
-        String m1 = Integer.toString(motorACommand);
-        String m2 = Integer.toString(motorBCommand);
+        String m1 = Integer.toString(motorA.getProgress());
+        String m2 = Integer.toString(motorB.getProgress());
         txtA.setText(m1);
         txtB.setText(m2);
         try {
-            if (btOutStream != null)
-                btOutStream.write((m1+m2).getBytes());
-        } catch (IOException e) {
-            //e.printStackTrace();
+            btOutStream.write((m1+m2).getBytes());
+        } catch (Exception e) {
+            txtStatus.setText("Disconnected");
+            disconnectFromCar();
+            connectToCar();
         }
     }
 }
