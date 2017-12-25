@@ -28,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     SeekBar motorB;
     TextView txtA;
     TextView txtB;
+    int motorACommand = 2;
+    int motorBCommand = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,11 +39,11 @@ public class MainActivity extends AppCompatActivity {
         btnConnect = (Button)findViewById(R.id.btnConnect);
 
         motorA = (SeekBar)findViewById(R.id.motorA);
-        motorA.setProgress(3);
-        motorA.setMax(6);
+        motorA.setProgress(2);
+        motorA.setMax(4);
         motorB = (SeekBar)findViewById(R.id.motorB);
-        motorB.setProgress(3);
-        motorB.setMax(6);
+        motorB.setProgress(2);
+        motorB.setMax(4);
 
         txtA = (TextView)findViewById(R.id.txtA);
         txtB = (TextView)findViewById(R.id.txtB);
@@ -52,14 +54,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                                                   int progresValue, boolean fromUser) {
-                        progress = Integer.toString(progresValue*85+1000);
-                        txtA.setText(progress);
-                        try {
-                            if (btOutStream != null)
-                                btOutStream.write(progress.getBytes());
-                        } catch (IOException e) {
-                            //e.printStackTrace();
-                        }
+                        motorBCommand = progresValue;
+                        sendCommand();
                     }
 
                     @Override
@@ -71,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        seekBar.setProgress(3);
+                        seekBar.setProgress(2);
 
                     }
         });
@@ -82,14 +78,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onProgressChanged(SeekBar seekBar,
                                                   int progresValue, boolean fromUser) {
-                        progress = Integer.toString(progresValue*85);
-                        txtB.setText(progress);
-                        try {
-                            if (btOutStream != null)
-                                btOutStream.write(progress.getBytes());
-                        } catch (IOException e) {
-                            //e.printStackTrace();
-                        }
+                        motorACommand = progresValue;
+                        sendCommand();
                     }
 
                     @Override
@@ -101,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {
-                        seekBar.setProgress(3);
+                        seekBar.setProgress(2);
 
                     }
                 });
@@ -160,5 +150,18 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void sendCommand() {
+        String m1 = Integer.toString(motorACommand);
+        String m2 = Integer.toString(motorBCommand);
+        txtA.setText(m1);
+        txtB.setText(m2);
+        try {
+            if (btOutStream != null)
+                btOutStream.write((m1+m2).getBytes());
+        } catch (IOException e) {
+            //e.printStackTrace();
+        }
     }
 }

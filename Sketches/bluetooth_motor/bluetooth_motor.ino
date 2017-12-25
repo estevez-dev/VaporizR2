@@ -15,40 +15,60 @@ const int offsetB = -1;
 
 SoftwareSerial BTSerial(3, 2); // RX | TX
 String reader;
-int d = 600;
 Motor motor1 = Motor(AIN1, AIN2, PWMA, offsetA, STBY);
 Motor motor2 = Motor(BIN1, BIN2, PWMB, offsetB, STBY);
 
 void setup()
 {
-  Serial.begin(9600);
-  Serial.println("Ready:");
+  //Serial.begin(9600);
+  //Serial.println("Ready:");
   BTSerial.begin(9600);  // HC-05 default speed in AT command more
   brake(motor1, motor2);
 }
 
 void loop()
 {
-  reader="";
-  while (BTSerial.available()) {
-    delay(3);
-    if (BTSerial.available()>0) {
-      char c = BTSerial.read();
-      reader += c;
-        
-    }
-  }
-  if (reader.length() > 0) {
-    Serial.println("Receved: "+reader+"");
-    d = reader.toInt();    
+  char m1 = '9';
+  char m2 = '9';
+  //Serial.println("There is "+String(BTSerial.available())+" available");
+  if (BTSerial.available()==2) {
+      m1 = BTSerial.read();
+      m2 = BTSerial.read();
+      //Serial.println("Receved: "+String(m1)+";"+String(m2));
+      switch (m1) {
+        case '0':
+          motor1.drive(-255);
+          break;
+        case '1':
+          motor1.drive(-170);
+          break;
+        case '2':
+          motor1.drive(0);
+          break;
+        case '3':
+          motor1.drive(170);
+          break;
+        case '4':
+          motor1.drive(255);
+          break;
+      }
+      switch (m2) {
+        case '0':
+          motor2.drive(-255);
+          break;
+        case '1':
+          motor2.drive(-170);
+          break;
+        case '2':
+          motor2.drive(0);
+          break;
+        case '3':
+          motor2.drive(170);
+          break;
+        case '4':
+          motor2.drive(255);
+          break;
+      }    
   }
 
-  if (d <= 500) { //0 - full back, 255 - stop, 500 - full forward
-    int v1 = d - 255;
-    motor1.drive(v1);  
-  } else if (d >= 1000) { // 1000 - full back, 1255 - stop, 1500 - full forward
-    int v2 = d - 1255; 
-    motor2.drive(v2);  
-  }
- 
 }
