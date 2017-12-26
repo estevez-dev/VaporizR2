@@ -1,4 +1,5 @@
 # VaporizR2
+It was a Nikko VaporizR2 RC toy. Dead one. So I removed all parts except motors, battery block and switch. The idea is to control it with Arduino from Android over Bluetooth.
 ## Parts
 1. Arduino Uno R3
 1. Sparkfun Motor Driver ([library and examples](https://learn.sparkfun.com/tutorials/tb6612fng-hookup-guide))
