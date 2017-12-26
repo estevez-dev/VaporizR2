@@ -7,9 +7,9 @@ It was a Nikko VaporizR2 RC toy. Dead one. So I removed all parts except motors,
 1. PP3 9-volt Battery
 ## Source code
 In source code you can find:
-* an Android app to control the car
-* a [Fritzing sketch](/estevez-dev/VaporizR2/tree/master/Fritzing) to build hardware
-* an [Arduino sketch](/estevez-dev/VaporizR2/tree/master/Sketches/bluetooth_motor)
+* an [Android app](/estevez-dev/VaporizR2/tree/master/Android) to control the car
+* a [Fritzing sketch](/estevez-dev/VaporizR2/blob/master/docs/VaporizR2.fzz) to build hardware
+* an [Arduino sketch](/estevez-dev/VaporizR2/tree/master/Arduino/VaporizR2)
 ## Car hardware
 ![image](https://github.com/estevez-dev/VaporizR2/blob/master/docs/VaporizR2_bb.png?raw=true)
 ## Android app
