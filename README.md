@@ -5,7 +5,7 @@
 1. HC-05 Serial Bluetooth Module
 1. PP3 9-volt Battery
 ## Source code
-In [branch v1.0](https://github.com/estevez-dev/VaporizR2/tree/v1.0) you can find:
+In source code you can find:
 * an Android app to control the car
 * a [Fritzing sketch](/estevez-dev/VaporizR2/tree/v1.0/Fritzing) to build hardware
 * an [Arduino sketch](/estevez-dev/VaporizR2/tree/v1.0/Sketches/bluetooth_motor)
