@@ -7,45 +7,41 @@
     tools:context="yehor.vialov.vaporizr2.MainActivity">
 
     <SeekBar
-        android:id="@+id/motorA"
+        android:id="@+id/motorB"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
-        android:layout_width="0dp"
+        android:layout_width="232dp"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:max="500"
         android:min="0"
         android:progress="255"
         android:rotation="270"
-        android:thumb="@android:drawable/ic_notification_overlay"
+        android:thumb="@drawable/thumb_image"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <SeekBar
-        android:id="@+id/motorB"
+        android:id="@+id/motorA"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
-        android:layout_width="0dp"
+        android:layout_width="232dp"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:max="500"
         android:min="0"
         android:progress="255"
         android:rotation="270"
-        android:thumb="@android:drawable/ic_notification_overlay"
+        android:thumb="@drawable/thumb_image"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/guideline"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/txtA"
+        android:id="@+id/txtB"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -55,7 +51,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/txtB"
+        android:id="@+id/txtA"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"

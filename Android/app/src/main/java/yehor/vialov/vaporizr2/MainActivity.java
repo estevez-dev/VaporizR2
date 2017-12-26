@@ -29,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
     SeekBar motorB;
     TextView txtA;
     TextView txtB;
-    private final static int MOTOR_FULL_FORWARD_COMMAND = 4;
+    private final static int MOTOR_FULL_FORWARD_COMMAND = 10;
     private final static int MOTOR_FULL_BACKWARD_COMMAND = 0;
-    private final static int MOTOR_STOP_COMMAND = 2;
+    private final static int MOTOR_STOP_COMMAND = 5;
     ImageView imEngine;
 
     @Override
@@ -41,10 +41,10 @@ public class MainActivity extends AppCompatActivity {
 
         txtStatus = (TextView) findViewById(R.id.txtStatus);
 
-        motorA = (SeekBar)findViewById(R.id.motorB);
+        motorA = (SeekBar)findViewById(R.id.motorA);
         motorA.setProgress(MOTOR_STOP_COMMAND);
         motorA.setMax(MOTOR_FULL_FORWARD_COMMAND);
-        motorB = (SeekBar)findViewById(R.id.motorA);
+        motorB = (SeekBar)findViewById(R.id.motorB);
         motorB.setProgress(MOTOR_STOP_COMMAND);
         motorB.setMax(MOTOR_FULL_FORWARD_COMMAND);
         motorA.setEnabled(false);
@@ -134,76 +134,83 @@ public class MainActivity extends AppCompatActivity {
     private void connectToCar() {
         new Thread() {
             public void run() {
+                boolean enableBTRequested = false;
                 while (btSocket==null || !btSocket.isConnected()) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            txtStatus.setText("Connecting...");
-                            imEngine.setVisibility(View.VISIBLE);
-                        }
-                    });
-
                     BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
                     if (adapter == null) {
-                        // Device does not support Bluetooth
-                        finish(); //exit
-                    }
-
-                    if (!adapter.isEnabled()) {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                txtStatus.setText("Bluetooth is not enabled. Will retry in 5 sec.");
+                                txtStatus.setText("Bluetooth is not supported");
                                 imEngine.setVisibility(View.VISIBLE);
                             }
                         });
-                        //make sure the device's bluetooth is enabled
-                        Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                        startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
                     } else {
-                        final UUID SERIAL_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //UUID for serial connection
-                        String mac = "98:D3:31:F5:2D:2F"; //my laptop's mac adress
-                        BluetoothDevice device = adapter.getRemoteDevice(mac); //get remote device by mac, we assume these two devices are already paired
-                        // Get a BluetoothSocket to connect with the given BluetoothDevice
-                        btSocket = null;
-                        btOutStream = null;
-                        try {
-                            btSocket = device.createRfcommSocketToServiceRecord(SERIAL_UUID);
-                        } catch (Exception e) {
+                        if (!adapter.isEnabled() && !enableBTRequested) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    txtStatus.setText("Error creating socket.  Will retry in 5 sec.");
+                                    txtStatus.setText("Bluetooth is not enabled. Will retry in 5 sec.");
                                     imEngine.setVisibility(View.VISIBLE);
                                 }
                             });
-                        }
-
-                        try {
-                            btSocket.connect();
-                            btOutStream = btSocket.getOutputStream();
-
-                            btConnected = true;
+                            //make sure the device's bluetooth is enabled
+                            enableBTRequested = true;
+                            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                            startActivityForResult(enableBluetooth, REQUEST_ENABLE_BT);
+                        } else if (adapter.isEnabled()) {
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    txtStatus.setText("Connected");
-                                    imEngine.setVisibility(View.GONE);
-                                    motorA.setEnabled(true);
-                                    motorB.setEnabled(true);
-                                }
-                            });
-                        } catch (Exception e) {
-                            final Exception er = e;
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    txtStatus.setText("Connection error. Will retry in 5 sec.");
+                                    txtStatus.setText("Connecting...");
                                     imEngine.setVisibility(View.VISIBLE);
                                 }
-
                             });
-                            e.printStackTrace();
+                            enableBTRequested = false;
+                            final UUID SERIAL_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //UUID for serial connection
+                            String mac = "98:D3:31:F5:2D:2F"; //my laptop's mac adress
+                            BluetoothDevice device = adapter.getRemoteDevice(mac); //get remote device by mac, we assume these two devices are already paired
+                            // Get a BluetoothSocket to connect with the given BluetoothDevice
+                            btSocket = null;
+                            btOutStream = null;
+                            try {
+                                btSocket = device.createRfcommSocketToServiceRecord(SERIAL_UUID);
+                            } catch (Exception e) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        txtStatus.setText("Error creating socket.  Will retry in 5 sec.");
+                                        imEngine.setVisibility(View.VISIBLE);
+                                    }
+                                });
+                            }
+
+                            try {
+                                btSocket.connect();
+                                btOutStream = btSocket.getOutputStream();
+
+                                btConnected = true;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        txtStatus.setText("Connected");
+                                        imEngine.setVisibility(View.GONE);
+                                        motorA.setEnabled(true);
+                                        motorB.setEnabled(true);
+                                    }
+                                });
+                            } catch (Exception e) {
+                                final Exception er = e;
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        txtStatus.setText("Connection error. Will retry in 5 sec.");
+                                        imEngine.setVisibility(View.VISIBLE);
+                                    }
+
+                                });
+                                e.printStackTrace();
+                            }
                         }
                     }
                     try {
@@ -217,8 +224,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendCommand() {
-        String m1 = Integer.toString(motorA.getProgress());
-        String m2 = Integer.toString(motorB.getProgress());
+        int motorASpeed, motorBSpeed;
+        String m1, m2;
+        int mAProgress = motorA.getProgress();
+        int mBProgress = motorB.getProgress();
+        if (mAProgress < 5) {
+            m1 = "b";
+            motorASpeed = 5 - mAProgress;
+        } else {
+            m1 = "f";
+            motorASpeed = mAProgress - 5;
+        }
+        if (mBProgress < 5) {
+            m2 = "b";
+            motorBSpeed = 5 - mBProgress;
+        } else {
+            m2 = "f";
+            motorBSpeed = mBProgress - 5;
+        }
+        m1 += Integer.toString(motorASpeed);
+        m2 += Integer.toString(motorBSpeed);
         txtA.setText(m1);
         txtB.setText(m2);
         try {
