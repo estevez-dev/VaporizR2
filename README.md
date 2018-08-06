@@ -1,3 +1,6 @@
+# Finished
+This project is finished and fully functional.
+
 # VaporizR2
 It was a Nikko VaporizR2 RC toy. Dead one. So I removed all parts except motors, battery block and switch. The idea is to control it with Arduino from Android over Bluetooth.
 ## Parts
